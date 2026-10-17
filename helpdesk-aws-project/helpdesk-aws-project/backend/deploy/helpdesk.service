@@ -1,0 +1,15 @@
+[Unit]
+Description=Helpdesk Ticketing Portal API
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/helpdesk-portal
+ExecStart=/usr/bin/node src/server.js
+Restart=on-failure
+RestartSec=5
+EnvironmentFile=/opt/helpdesk-portal/.env
+User=ec2-user
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Helpdesk Ticketing Portal - Test Client</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; color: #1a1a1a; }
+  h1 { font-size: 22px; } h2 { font-size: 17px; margin-top: 32px; }
+  input, textarea, select, button { display: block; width: 100%; margin: 6px 0 14px; padding: 8px; font-size: 14px; box-sizing: border-box; }
+  button { background: #1F3864; color: #fff; border: none; border-radius: 4px; cursor: pointer; padding: 10px; }
+  #apiBase { background: #f4f4f4; }
+  pre { background: #f4f4f4; padding: 10px; border-radius: 4px; white-space: pre-wrap; word-break: break-word; }
+  .row { display: flex; gap: 10px; } .row > * { flex: 1; }
+</style>
+</head>
+<body>
+  <h1>Helpdesk Ticketing Portal — API Test Client</h1>
+  <label>API Base URL</label>
+  <input id="apiBase" value="http://localhost:3000/api" />
+
+  <h2>1. Register / Login</h2>
+  <div class="row">
+    <input id="regName" placeholder="Name (register only)" />
+    <input id="email" placeholder="Email" />
+  </div>
+  <input id="password" type="password" placeholder="Password" />
+  <div class="row">
+    <button onclick="register()">Register</button>
+    <button onclick="login()">Login</button>
+  </div>
+
+  <h2>2. Create Ticket</h2>
+  <input id="ticketTitle" placeholder="Title" />
+  <textarea id="ticketDesc" placeholder="Description" rows="3"></textarea>
+  <select id="ticketPriority">
+    <option>Low</option><option selected>Medium</option><option>High</option><option>Critical</option>
+  </select>
+  <button onclick="createTicket()">Create Ticket</button>
+
+  <h2>3. My Tickets</h2>
+  <button onclick="listTickets()">Refresh Tickets</button>
+
+  <h2>4. Add Comment</h2>
+  <div class="row">
+    <input id="commentTicketId" placeholder="Ticket ID" />
+    <input id="commentMsg" placeholder="Comment" />
+  </div>
+  <button onclick="addComment()">Post Comment</button>
+
+  <h2>Output</h2>
+  <pre id="out">Nothing yet.</pre>
+
+<script>
+let token = "";
+const base = () => document.getElementById("apiBase").value.replace(/\/$/, "");
+const show = (data) => document.getElementById("out").textContent = JSON.stringify(data, null, 2);
+
+async function call(path, method = "GET", body) {
+  const res = await fetch(base() + path, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: "Bearer " + token } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json();
+  show(data);
+  return data;
+}
+
+async function register() {
+  await call("/auth/register", "POST", {
+    name: document.getElementById("regName").value,
+    email: document.getElementById("email").value,
+    password: document.getElementById("password").value,
+  });
+}
+
+async function login() {
+  const data = await call("/auth/login", "POST", {
+    email: document.getElementById("email").value,
+    password: document.getElementById("password").value,
+  });
+  if (data.token) token = data.token;
+}
+
+async function createTicket() {
+  await call("/tickets", "POST", {
+    title: document.getElementById("ticketTitle").value,
+    description: document.getElementById("ticketDesc").value,
+    priority: document.getElementById("ticketPriority").value,
+  });
+}
+
+async function listTickets() {
+  await call("/tickets", "GET");
+}
+
+async function addComment() {
+  const id = document.getElementById("commentTicketId").value;
+  await call(`/tickets/${id}/comments`, "POST", {
+    message: document.getElementById("commentMsg").value,
+  });
+}
+</script>
+</body>
+</html>
